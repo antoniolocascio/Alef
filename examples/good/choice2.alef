@@ -1,0 +1,37 @@
+(* Non-deterministic choice. *)
+(* Interleaving handler through handler composition, 
+   using State as an intermediate effect. *)
+
+signature {
+      Choose: unit -> bool
+    , Get: unit -> bool
+    , Set: bool -> unit
+}
+
+st : nat<Get, Set | mu> ->> (bool -> nat<mu>)<mu>
+st = handler 
+      val x    -> val (fun s -> val x),
+      {Get u k -> val (fun s -> let f = k s in f s),
+       Set x k -> val (fun s -> let f = k () in f x)};;
+
+not : bool -> bool<mu>
+not = fun b -> if b then val false else val true;;
+
+choiceToSt : nat<Choose | mu> ->> nat<Get, Set | mu>
+choiceToSt = handler
+                val x -> val x,
+                {Choose x k -> let b = Get() in 
+                               let nb = not b in
+                               let u = Set(nb) in 
+                                   k b};;       
+
+main : nat<mu>
+main =  let run = with st handle (with choiceToSt handle
+           (let c1 = Choose() in 
+            let c2 = Choose() in
+            let c3 = Choose() in
+            if c1 
+                then (if c2 then val 2 else val 1)
+                else (if c2 then val 1 else val 0) 
+           )) 
+        in run false

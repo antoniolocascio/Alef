@@ -1,0 +1,6 @@
+(* Top level handling of operations. *) 
+(* Echo example: read a number an print it. *)
+
+main : unit<Print, Read | mu>
+main = let x = Read() in
+       Print(x)

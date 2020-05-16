@@ -1,0 +1,36 @@
+excToNat : nat -> (nat<Throw | mu0> ->> nat<mu0>)<mu4>
+excToNat = fun n -> val (handler 
+            val x -> val x,
+            {Throw x k -> val n} : nat<Throw | mu0> ->> nat<mu0>);;
+
+dec : nat -> nat<Throw | mu1>
+dec = fun n -> match n with
+                | 0 -> let u = Throw(1) in val 1 
+                | succ x -> val x;;
+
+crash1 : nat -> nat<Throw | mu2>
+crash1 = fun n -> 
+  match n with 
+    | 0 -> val 0
+    | succ x -> match x with
+      | 0 -> let u = Throw(1) in val 1  
+      | succ x -> val (succ (succ x));;
+
+
+(* -- Conflated
+-- Exceptions raised by dec and crash1 are handled by h.
+main : nat< mu0>
+main =  let h = excToNat 10 in 
+        with h handle (let x = dec 3 in crash1 x)  *)
+
+
+
+-- Distinct (behaviour)
+-- Exceptions raised by dec are handled by h2 (by returning 0) while
+-- those raised by crash1 are handled by h1.
+main : nat<mu>
+main =  let h1 = excToNat 10 in 
+        let h2 = excToNat 0 in 
+        with h1 handle (let x = (with h2 handle dec 0) in crash1 x) 
+
+

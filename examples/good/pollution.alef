@@ -1,0 +1,26 @@
+(* Example of effect pollution. *)
+
+excToNat : nat<Throw | mu0> ->> nat<mu0>
+excToNat = handler 
+            val x -> val x,
+            {Throw x k -> val 0};;
+
+op1ToExc : nat<Op1 | mu1> ->> nat<Throw | mu1>
+op1ToExc = handler 
+            val x -> val x,
+            {Op1 u k -> let y = Throw 0 in k y};;
+
+c1 : unit -> nat<mu2>
+c1 = fun u -> val 3;;
+
+c2 : unit -> nat<Op1 | mu2>
+c2 = fun u -> let x = Op1() in val 3;;
+
+c3 : unit -> nat<Throw, Op1 | mu2>
+c3 = fun u -> let x = Throw(3) in val 3;;
+
+main : nat<mu3>
+main = 
+  with excToNat handle (
+    with op1ToExc handle c3()
+  )

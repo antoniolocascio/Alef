@@ -1,0 +1,25 @@
+(* Non-deterministic choice. *)
+(* Constant handlers. *)
+
+signature {
+      Choose: unit -> bool
+}
+
+alwaysTrue : nat<Choose | mu> ->> nat<mu>
+alwaysTrue = handler 
+              val x -> val x,
+              {Choose x k -> k true};;
+
+alwaysFalse : nat<Choose | mu> ->> nat<mu>
+alwaysFalse = handler 
+                  val x -> val x,
+                  {Choose x k -> k false};;    
+
+main : nat<mu>
+main =  with alwaysTrue handle
+           (let c1 = Choose() in 
+            let c2 = Choose() in
+            if c1 
+                then (if c2 then val 2 else val 1)
+                else (if c2 then val 1 else val 0) 
+           )

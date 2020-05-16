@@ -1,0 +1,12 @@
+(* Reverse prints *)
+
+reverse : unit<Print | mu1> ->> unit<Print | mu1>
+reverse = handler
+            val x -> val (),
+            {Print x k -> let y = k () in Print(x)};;
+
+main : unit<Print | mu2>
+main = with reverse handle 
+  (let x = Print(1)
+   in let y = Print(2)
+      in val ())

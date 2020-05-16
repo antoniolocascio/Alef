@@ -1,0 +1,16 @@
+(* Examples of the importance of effect variable names. *)
+
+ho : (unit -> unit<mu1>) -> (unit->unit<mu2>)<mu1>
+ho = fun f -> let ff = (let x = f() in val f) in val ff;;
+
+g : unit -> unit<Op1 | mu4>
+g = fun u -> Op1();;
+
+h : (unit -> unit<mu5>)<Op1 | mu0> ->> (unit -> unit<mu5>)<mu0>
+h = handler 
+      val x    -> val x,
+      {Op1 u k -> k u};;
+
+
+main : unit<mu> 
+main = let gg = with h handle ho g in gg()

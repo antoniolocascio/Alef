@@ -1,0 +1,10 @@
+(* HO function ignore. *)
+
+ignore : (unit -> unit<mu0>) -> unit<mu1>
+ignore = fun f -> val ();;
+
+g : unit -> unit<Print | mu0>
+g = fun u -> Print(1);;
+
+main : unit<mu0>
+main = ignore g 

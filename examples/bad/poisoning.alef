@@ -1,0 +1,8 @@
+(* Example of the Poisoning Problem. *)
+
+main : (nat -> unit<mu2>)<mu1>
+main = 
+  let pure = val (fun msg -> val () : nat -> unit<mu3>) in 
+  let impure = val (fun msg -> Print(msg) : nat -> unit<Print | mu4>) in
+  let f = if true then (val pure) else (val impure) in 
+  val pure   

@@ -1,0 +1,15 @@
+(* Examples of the importance of effect variable names. *)
+(* Effect variables in e1's type should be equal. *)
+
+pr0 : unit -> unit<Print | mu1>
+pr0 = fun x -> Print(0);;
+
+g : unit -> unit<mu4>
+g = fun u -> val u;;
+
+
+e1 : (unit -> unit<mu2>) -> unit<mu3>
+e1 = fun f -> let x = f () in g ();;
+
+main : unit<mu5>
+main = e1 pr0

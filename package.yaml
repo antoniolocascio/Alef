@@ -1,0 +1,124 @@
+library:
+  source-dirs: src
+tests:
+  Typing:
+    source-dirs: test
+    main: Typing.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Stepper:
+    source-dirs: test
+    main: Stepper.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Sanity:
+    source-dirs: test
+    main: Sanity.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Safety:
+    source-dirs: test
+    main: Safety.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Unit:
+    source-dirs: test
+    main: Unit.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Printing:
+    source-dirs: test
+    main: Printing.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+  Parsing:
+    source-dirs: test
+    main: Parsing.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+    other-modules:
+    - Common
+    - QCInstances
+
+copyright: 2019 Author name here
+maintainer: example@example.com
+dependencies:
+- parsec
+- QuickCheck
+- pretty
+- mtl
+- text
+- containers
+- base >= 4.7 && < 5
+- directory
+default-extensions:
+- GADTs
+- FlexibleInstances
+- TypeFamilies
+- FunctionalDependencies
+- TupleSections
+name: Alef
+version: 0.1.0.0
+extra-source-files:
+- README.md
+- ChangeLog.md
+author: Antonio Locascio
+github: antoniolocascio/Alef
+license: BSD3
+executables:
+  alef:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Alef
+description: Please see the README on GitHub at <https://github.com/antoniolocascio/Alef#readme>

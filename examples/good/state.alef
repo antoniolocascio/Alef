@@ -1,0 +1,19 @@
+(* Example of state effect *)
+
+signature {
+    Get: unit -> nat
+  , Set: nat -> unit
+}
+
+st : nat<Get, Set | mu> ->> (nat -> nat<mu>)<mu>
+st = handler 
+      val x    -> val (fun s -> val x),
+      {Get u k -> val (fun s -> let f = k s in f s),
+       Set x k -> val (fun s -> let f = k () in f x)};;
+
+main : nat<mu>
+main =  let comp = with st handle 
+                    (let x = Set(1) in 
+                     let y = Get() in 
+                     val y) 
+        in comp 0

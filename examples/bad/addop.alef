@@ -1,0 +1,11 @@
+(* HO function that adds an operation to a function's type. *)
+
+add : (unit -> unit<mu>) -> unit<Op1 | mu> 
+add = fun f -> let x = f() in Op1();; 
+
+addop : (unit -> unit<mu>) -> (unit -> unit<Op1 | mu>)<mu2>
+addop = fun f -> val (fun u -> let x = f() in Op1() :
+        unit -> unit<Op1 | mu>);;
+      
+main : (unit -> unit<mu33>)<mu1> 
+main = addop (fun x -> val x)

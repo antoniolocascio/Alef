@@ -1,0 +1,19 @@
+(* Examples of the importance of effect variable names. *)
+
+f : unit -> (unit -> unit<mu11>)<mu2>
+f = fun x -> val (fun u -> val u : (unit -> unit<mu1>)) ;;
+
+g : unit -> unit<Op1 | mu3>
+g = fun u -> Op1();;
+
+
+ign : (unit -> unit<mu10>) -> unit<mu2>
+ign = fun f -> val ();;
+
+appl : (unit -> unit<mu12>) -> unit<mu12>
+appl = fun f -> f();;
+
+main : (unit -> unit<mu4>)<mu2>
+main = let ff = f() in 
+       let x = appl g in 
+       val ff 

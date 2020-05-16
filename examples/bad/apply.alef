@@ -1,0 +1,11 @@
+(* HO function apply. *)
+(* main's type should have Print operation. *)
+
+apply : (unit -> unit<mu0>) -> unit<mu0>
+apply = fun f -> f ();;
+
+g : unit -> unit<Print | mu1>
+g = fun u -> Print(1);;
+
+main : unit<mu2>
+main = apply g 

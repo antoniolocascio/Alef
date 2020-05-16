@@ -1,0 +1,17 @@
+(* Examples of the importance of effect variable names. *)
+
+f1 : unit -> unit<mu>
+f1 = fun u -> val u;;
+
+f2 : unit -> unit<Op1 | mu>
+f2 = fun u -> Op1();;
+
+ifn : (unit -> unit<mu>) -> (unit -> unit<mu>)<mu>
+ifn = fun f -> if true then (let x = f() in val f1) else (val f);; 
+
+ifnr : (unit -> unit<mu>) -> (unit -> unit<mu>)<mu>
+ifnr = fun f -> if false then (val f) else (let x = f() in val f1);;
+
+main : unit<mu>
+(* main : unit<Op1|mu> *)
+main = let f = ifn f1 in val ()
