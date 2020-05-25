@@ -8,7 +8,7 @@ excToNat = handler
 op1ToExc : nat<Op1 | mu1> ->> nat<Throw | mu1>
 op1ToExc = handler 
             val x -> val x,
-            {Op1 u k -> let y = Throw 0 in k y};;
+            {Op1 u k -> let y = Throw 0 in k ()};;
 
 c1 : unit -> nat<mu2>
 c1 = fun u -> val 3;;

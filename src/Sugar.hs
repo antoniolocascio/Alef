@@ -41,7 +41,7 @@ import           Printing.PPAST
 -- | Default effect environment.
 sigma :: Sig
 sigma =
-  (th, TOp TNat TUnit) : (pr, TOp TNat TUnit) : (re, TOp TUnit TNat) : map
+  (th, TOp TNat TEmpty) : (pr, TOp TNat TUnit) : (re, TOp TUnit TNat) : map
     (\i -> (opi i, TOp TUnit TUnit))
     [1 .. 4]
  where
