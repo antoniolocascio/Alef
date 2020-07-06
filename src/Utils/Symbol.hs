@@ -4,6 +4,7 @@ module Utils.Symbol
   , fromSymbol
   , append
   , EffVar
+  , Var
   )
 where
 
@@ -22,5 +23,8 @@ append :: Symbol -> Symbol -> Symbol
 append = Text.append
 
 -- Some useful type synonyms.
--- | An effect variable, EVar, is a symbol. 
+-- | An effect variable is a symbol. 
 type EffVar = Symbol
+
+-- | We represent variable names with symbols.
+type Var = Symbol

@@ -1,5 +1,5 @@
 # Alef
-Implementatition of the Alef language, described in my Licentiate thesis. Alef is a core calculus with algebraic effects, based on Bauer and Pretnar's Eff. This implementation's goal is to showcase Alef's bidirectional type-and-effect system.
+Implementation of the Alef language. Alef is a core calculus with algebraic effects, based on Bauer and Pretnar's Eff. This implementation's goal is to showcase Alef's bidirectional type-and-effect system.
 
 ## Getting Started
 

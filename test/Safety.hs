@@ -27,8 +27,6 @@ main = do
                  prop_preservation
   testHeader "Progress"
   quickCheckWith (stdArgs { maxSize = 50, maxSuccess = 10000 }) prop_progress
-  -- quickCheck (withMaxSuccess 100000 prop_synth_invariant)
-  -- quickCheck (withMaxSuccess 100000 prop_synth_checks)
 
 prop_preservation :: TypedTerm -> Property
 prop_preservation (TT term typ) =

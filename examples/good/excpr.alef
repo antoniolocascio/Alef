@@ -1,0 +1,7 @@
+excpr : unit<Throw | μ> ->> unit<Print | μ>
+excpr =  handler 
+  val x -> val x, 
+  {Throw x k -> Print(x)};;
+
+main : unit<Print | μ>
+main = with excpr handle (Throw(42); val ())

@@ -1,7 +1,9 @@
 (* Examples of the importance of effect variable names. *)
 
 ho : (unit -> unit<mu1>) -> (unit->unit<mu2>)<mu3>
-ho = fun f -> let ff = val f in val ff;; 
+ho = fun f -> 
+        let ff = val f in 
+        val ff;; 
 
 main : unit<mu>
 main = val ()

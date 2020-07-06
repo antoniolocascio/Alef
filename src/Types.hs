@@ -6,7 +6,8 @@ import           Utils.Symbol                   ( EffVar )
 import           Utils.Set                     as S
 
 -- | A type can be either a value type or a computation type. 
-data Type = VT VType | CT CType deriving (Eq)
+data Type = VT VType | CT CType  deriving (Eq)
+data TypeScheme = TS (S.Set EffVar) Type deriving (Eq)
 
 -- | Unwrap value type
 toVT :: Type -> VType
@@ -62,6 +63,15 @@ instance Substitutable Type EffVar EffRow  where
   apply sub (VT vt) = VT $ apply sub vt
   apply sub (CT ct) = CT $ apply sub ct
 
+-- | Substitutable instance for Type Scheme
+instance Substitutable TypeScheme EffVar EffRow where
+  apply sub (TS bv pt) =
+    TS bv (apply (dres sub (S.toList $ S.diff (S.fromList $ dom sub) bv)) pt)
+
+instance Substitutable (Either Type TypeScheme) EffVar EffRow where
+  apply sub (Left  t ) = Left $ apply sub t
+  apply sub (Right ts) = Right $ apply sub ts
+
 -- | Substitutable instance for OpType
 instance Substitutable OpType EffVar EffRow where
   apply sub (TOp a b) = TOp (apply sub a) (apply sub b)
@@ -76,3 +86,6 @@ fv = S.toList . fv_
   fvVT (THand c d) = S.union (fvCT c) (fvCT d)
   fvVT _           = S.empty
   fvCT (TComp a er) = S.insert (effVar er) (fvVT a)
+
+fvTS :: TypeScheme -> [EffVar]
+fvTS (TS bv pt) = S.toList $ S.diff (S.fromList $ fv pt) bv

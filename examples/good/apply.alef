@@ -1,10 +1,10 @@
 (* HO function apply. *)
 
-apply : (unit -> unit<mu1>) -> unit<mu1>
+apply : (unit -> unit<μ>) -> unit<μ>
 apply = fun f -> f ();;
 
-g : unit -> unit<Print | mu0>
-g = fun u -> Print(1);;
+g : unit -> unit<Print | μ>
+g = fun _ -> Print(1);;
 
-main : unit<Print | mu3>
-main = apply g 
+main : unit<Print | μ>
+main = apply (fun _ -> Print(1))

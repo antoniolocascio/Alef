@@ -6,7 +6,4 @@ count = handler
           {Print x k -> let a = k () in val (succ a)};;
 
 main : nat<mu>
-main = with count handle 
-  (let x = Print(1) in 
-   let y = Print(2) in
-   if false then Print(3) else val ())
+main = with count handle (Print(1); Print(2); Print(3))

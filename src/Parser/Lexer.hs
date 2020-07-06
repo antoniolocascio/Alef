@@ -13,7 +13,7 @@ lexer = Tok.makeTokenParser Tok.LanguageDef
   , Tok.commentEnd      = "*)"
   , Tok.commentLine     = "--"
   , Tok.nestedComments  = True
-  , Tok.identStart      = letter
+  , Tok.identStart      = letter <|> char '_'
   , Tok.identLetter     = alphaNum <|> char '_'
   , Tok.opStart         = oneOf ":,;="
   , Tok.opLetter        = char '='

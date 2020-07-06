@@ -8,6 +8,7 @@ import           Utils.Substitution
 import           AST
 import           EffectRow
 import           Utils.Symbol
+import           Data.Either                    ( either )
 
 type Error = String
 
@@ -79,21 +80,21 @@ cannotSynth term =
     ++ "For term:\n"
     ++ renderTerm term
 
-notAlphaEq :: Type -> Substitution EffVar EffRow -> Term -> Error
+notAlphaEq :: Type -> Substitution EffVar EffRow -> Either Var Term -> Error
 notAlphaEq t sub term =
   "Type cannot be checked, types not alpha-equivalent: "
     ++ "\n"
-    ++ "Checked type: "
+    ++ "Expected type: "
     ++ renderType t
     ++ "\n"
-    ++ "With instantiation: \n"
-    ++ renderSubstitution sub
-    ++ "\n"
-    ++ "Resulting type: "
+    -- ++ "With instantiation: \n"
+    -- ++ renderSubstitution sub
+    -- ++ "\n"
+    ++ "Actual type: "
     ++ renderType (apply sub t)
     ++ "\n"
     ++ "For Term:\n"
-    ++ renderTerm term
+    ++ renderTerm (either (E . EVar) id term)
 
 diffEffVarsHand :: EffVar -> EffVar -> Term -> Error
 diffEffVarsHand mu1 mu2 term =

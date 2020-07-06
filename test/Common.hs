@@ -73,7 +73,8 @@ e2 =
       ct = VT $ TFunc
         TUnit
         (TComp TNat (insert (opi 1) (insert (opi 3) empty), toSymbol "mu2"))
-  in  extEnv (toSymbol "c") ct $ extEnv (toSymbol "h") ht (initEnv sigma)
+  in  extEnv (toSymbol "c") (Left ct)
+        $ extEnv (toSymbol "h") (Left ht) (initEnv sigma)
 
 
 -- Ejemplo 3 - Figura 6 
@@ -95,8 +96,8 @@ e3_2 =
   let applyt = VT $ TFunc (TFunc TUnit (TComp TUnit (empty, toSymbol "mu1")))
                           (TComp TUnit (empty, toSymbol "mu1"))
       crasht = VT $ TFunc TUnit (TComp TUnit (insert th empty, toSymbol "mu2"))
-  in  extEnv (toSymbol "crash") crasht
-        $ extEnv (toSymbol "apply") applyt (initEnv sigma)
+  in  extEnv (toSymbol "crash") (Left crasht)
+        $ extEnv (toSymbol "apply") (Left applyt) (initEnv sigma)
 
 -- Ejemplo 4 - Figura 7 
 p4 :: Term

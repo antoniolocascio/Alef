@@ -1,4 +1,7 @@
-(* Example of the Poisoning Problem. *)
+(* Example of the Poisoning Problem presented in Bauer and Pretnar's
+   An effect system for algebraic effects and handlers.
+   Alef can assign this program the desired type.
+*)
 
 main : (nat -> unit<mu2>)<mu1>
 main = 

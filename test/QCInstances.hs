@@ -100,7 +100,7 @@ arbitrarySizedExp te TUnit _ =
   let nvars = nVarsInCtx te TUnit
   in  frequency [(1, return EUnit), (nvars, arbitraryVarInCtx te TUnit)]
 arbitrarySizedExp te TNat sz =
-  let nvars   = length $ filter ((== VT TNat) . snd) (vars te)
+  let nvars   = length $ filter ((== Left (VT TNat)) . snd) (vars te)
       sizeLim = if sz == 0 then 0 else 1
   in  frequency
         [ (1      , return EZero)
@@ -114,7 +114,7 @@ arbitrarySizedExp te t@(TFunc a c) sz =
         [ ( sizeLim
           , do
             x  <- arbitraryVar "x"
-            bd <- arbitrarySizedComp (extEnv x (VT a) te) c (div sz 2)
+            bd <- arbitrarySizedComp (extEnv x (Left $ VT a) te) c (div sz 2)
             t' <- randomRename t
             return $ EAnno (EFunc x bd) t'
           )
@@ -127,15 +127,18 @@ arbitrarySizedExp te t@(THand ct@(TComp c er) dt@(TComp d er')) sz =
         [ ( sizeLim
           , do
             let opers = operations er
-            x       <- arbitraryVar "x"
-            cv      <- arbitrarySizedComp (extEnv x (VT c) te) dt (div sz 2)
+            x <- arbitraryVar "x"
+            cv <- arbitrarySizedComp (extEnv x (Left $ VT c) te) dt (div sz 2)
             clauses <- mapM
               (\opi -> do
                 xi <- arbitraryVar "x"
                 ki <- arbitraryVar "k"
                 let (TOp ai bi) = fromJust $ lookup opi (ops te)
                 ci <- arbitrarySizedComp
-                  (extEnv xi (VT ai) (extEnv ki (VT $ TFunc bi dt) te))
+                  (extEnv xi
+                          (Left $ VT ai)
+                          (extEnv ki (Left (VT $ TFunc bi dt)) te)
+                  )
                   dt
                   (div sz 4)
                 return (opi, xi, ki, ci)
@@ -161,76 +164,79 @@ arbitraryVar prefix = do
 
 arbitraryVarInCtx :: TypeEnv e => e -> VType -> Gen Exp
 arbitraryVarInCtx te t =
-  let tvars = fst <$> filter ((== VT t) . snd) (vars te)
+  let tvars = fst <$> filter ((== Left (VT t)) . snd) (vars te)
   in  EVar <$> elements tvars
 
 nVarsInCtx :: TypeEnv e => e -> VType -> Int
-nVarsInCtx te t = length $ filter ((== VT t) . snd) (vars te)
+nVarsInCtx te t = length $ filter ((== Left (VT t)) . snd) (vars te)
 
 arbitrarySizedComp :: TypeEnv e => e -> CType -> Int -> Gen Comp
 arbitrarySizedComp te ct@(TComp a er) 0 = CVal <$> arbitrarySizedExp te a 0
 arbitrarySizedComp te ct@(TComp a er) sz =
   let nOps = length (operations er)
-  in  frequency
-        [ (1, CVal <$> arbitrarySizedExp te a (div sz 2))
-        , ( nOps
-          , do
-            op <- elements (operations er)
-            let (TOp ai bi) = fromJust $ lookup op (ops te)
-            e <- arbitrarySizedExp te ai (div sz 2)
-            y <- arbitraryVar "y"
-            c <- arbitrarySizedComp (extEnv y (VT bi) te) ct (div sz 2)
-            return $ COp op e y c
-          )
-        , ( 1
-          , do
-            mu            <- arbitraryVar "mu"
-            handled       <- someof (fst <$> ops te)
-            (TComp at ar) <- arbitrarySizedCTypeEVar handled (div sz 2) mu
-            produced      <- someof (operations er)
-            let bt = TComp a (foldr addOp (emptyRow mu) produced)
-            h   <- arbitrarySizedExp te (THand (TComp at ar) bt) (div sz 2)
-            er' <- arbitraryEffRow (operations er)
-            c   <- arbitrarySizedComp te (TComp at er') (div sz 2)
-            return $ CWith h c
-          )
-        , ( 1
-          , do
-            a   <- arbitrarySizedVType (operations er) (div sz 2)
-            ct' <- smallerCType ct
-            e1  <- arbitrarySizedExp te (TFunc a ct') (div sz 2)
-            e2  <- arbitrarySizedExp te a (div sz 2)
-            return $ CApp e1 e2
-          )
-        , ( 1
-          , do
-            e    <- arbitrarySizedExp te TBool (div sz 2)
-            ct'  <- smallerCType ct
-            ct'' <- smallerCType ct
-            c1   <- arbitrarySizedComp te ct' (div sz 2)
-            c2   <- arbitrarySizedComp te ct'' (div sz 2)
-            return $ CIf e c1 c2
-          )
-        , ( 1
-          , do
-            e    <- arbitrarySizedExp te TNat (div sz 2)
-            ct'  <- smallerCType ct
-            ct'' <- smallerCType ct
-            c1   <- arbitrarySizedComp te ct' (div sz 2)
-            x    <- arbitraryVar "x"
-            c2   <- arbitrarySizedComp (extEnv x (VT TNat) te) ct'' (div sz 2)
-            return $ CMatch e c1 x c2
-          )
-        , ( 1
-          , do
-            x            <- arbitraryVar "x"
-            (TComp a ar) <- arbitrarySizedCType (operations er) (div sz 2)
-            c1           <- arbitrarySizedComp te (TComp a ar) (div sz 2)
-            ct'          <- smallerCType ct
-            c2 <- arbitrarySizedComp (extEnv x (VT a) te) ct' (div sz 2)
-            return $ CLet x c1 c2
-          )
-        ]
+  in
+    frequency
+      [ (1, CVal <$> arbitrarySizedExp te a (div sz 2))
+      , ( nOps
+        , do
+          op <- elements (operations er)
+          let (TOp ai bi) = fromJust $ lookup op (ops te)
+          e <- arbitrarySizedExp te ai (div sz 2)
+          y <- arbitraryVar "y"
+          c <- arbitrarySizedComp (extEnv y (Left $ VT bi) te) ct (div sz 2)
+          return $ COp op e y c
+        )
+      , ( 1
+        , do
+          mu            <- arbitraryVar "mu"
+          handled       <- someof (fst <$> ops te)
+          (TComp at ar) <- arbitrarySizedCTypeEVar handled (div sz 2) mu
+          produced      <- someof (operations er)
+          let bt = TComp a (foldr addOp (emptyRow mu) produced)
+          h   <- arbitrarySizedExp te (THand (TComp at ar) bt) (div sz 2)
+          er' <- arbitraryEffRow (operations er)
+          c   <- arbitrarySizedComp te (TComp at er') (div sz 2)
+          return $ CWith h c
+        )
+      , ( 1
+        , do
+          a   <- arbitrarySizedVType (operations er) (div sz 2)
+          ct' <- smallerCType ct
+          e1  <- arbitrarySizedExp te (TFunc a ct') (div sz 2)
+          e2  <- arbitrarySizedExp te a (div sz 2)
+          return $ CApp e1 e2
+        )
+      , ( 1
+        , do
+          e    <- arbitrarySizedExp te TBool (div sz 2)
+          ct'  <- smallerCType ct
+          ct'' <- smallerCType ct
+          c1   <- arbitrarySizedComp te ct' (div sz 2)
+          c2   <- arbitrarySizedComp te ct'' (div sz 2)
+          return $ CIf e c1 c2
+        )
+      , ( 1
+        , do
+          e    <- arbitrarySizedExp te TNat (div sz 2)
+          ct'  <- smallerCType ct
+          ct'' <- smallerCType ct
+          c1   <- arbitrarySizedComp te ct' (div sz 2)
+          x    <- arbitraryVar "x"
+          c2   <- arbitrarySizedComp (extEnv x (Left $ VT TNat) te)
+                                     ct''
+                                     (div sz 2)
+          return $ CMatch e c1 x c2
+        )
+      , ( 1
+        , do
+          x            <- arbitraryVar "x"
+          (TComp a ar) <- arbitrarySizedCType (operations er) (div sz 2)
+          c1           <- arbitrarySizedComp te (TComp a ar) (div sz 2)
+          ct'          <- smallerCType ct
+          c2 <- arbitrarySizedComp (extEnv x (Left $ VT a) te) ct' (div sz 2)
+          return $ CLet x c1 c2
+        )
+      ]
 
 
 smallerCType :: CType -> Gen CType

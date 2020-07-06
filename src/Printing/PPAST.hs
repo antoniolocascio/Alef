@@ -76,11 +76,10 @@ pComp (CMatch e c1 x c2) =
     $$  nest tabW (text "| succ" <+> pVar x <+> funcArrow <+> pComp c2)
 pComp (CLet x c1 c2) =
   parens
-    $  text "let"
-    $$ nest tabW (pVar x <+> text "=" <+> pComp c1)
-    $$ text "in"
-    $$ nest tabW (pComp c2)
-pComp (CAnno c t) = parens $ pComp c <+> text ":" <+> pCType t
+    $   text "let"
+    <+> (pVar x <+> text "=" <+> pComp c1)
+    <+> text "in"
+    $$  pComp c2
 
 pTerm :: Term -> Doc
 pTerm (E e) = pExp e

@@ -38,7 +38,6 @@ step te (CWith h@(EAnno (EHand _ _ clauses) (THand _ bt)) (COp op e y c)) =
 step te (CWith h c) = do
   c' <- step te c
   return $ CWith h c'
-step te (CAnno c _) = step te c
 
 getClause
   :: Operation
@@ -65,7 +64,6 @@ removeAnnosC (CIf e c1 c2) =
 removeAnnosC (CLet x c1 c2) = CLet x (removeAnnosC c1) (removeAnnosC c2)
 removeAnnosC (CMatch e c1 x c2) =
   CMatch (removeAnnosE e) (removeAnnosC c1) x (removeAnnosC c2)
-removeAnnosC (CAnno c _) = removeAnnosC c
 
 removeAnnosE :: Exp -> Exp
 removeAnnosE (ESucc e  ) = ESucc $ removeAnnosE e

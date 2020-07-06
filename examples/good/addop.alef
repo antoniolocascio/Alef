@@ -1,9 +1,0 @@
-(* HO fuction that calls the argument and then invokes an operation. *)
-(* This example show how functions are more expressive than 
-   elimination forms. *)
-
-add : (unit -> unit<mu>) -> unit<Op1 | mu> 
-add = fun f -> let x = f() in Op1();;
-
-main : unit<Op1|mu> 
-main = add (fun u -> val u)

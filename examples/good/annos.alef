@@ -1,5 +1,5 @@
 (* Effect variable names are only significant within their scope. *)
 
 main : unit<mu0>
-main =  let g = val (fun u -> Print(1) : unit -> unit<mu0>) in 
+main =  let g = val (fun u -> Print(1) : unit -> unit<Print | mu0>) in 
         val ()

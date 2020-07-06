@@ -220,8 +220,19 @@ letC = do
   reserved "in"
   CLet x c1 <$> comp
 
-comp :: Parser Comp
-comp =
+-- comp :: Parser Comp
+-- comp =
+--   valC
+--     <|> opC
+--     <|> withC
+--     <|> ifC
+--     <|> try matchC
+--     <|> letC
+--     <|> try appC
+--     <|> parens comp
+
+comp1 :: Parser Comp
+comp1 =
   valC
     <|> opC
     <|> withC
@@ -229,7 +240,17 @@ comp =
     <|> try matchC
     <|> letC
     <|> try appC
-    <|> parens comp
+    <|> parens comp1
+
+semicolonSep :: Parser Comp
+semicolonSep = do
+  c <- comp1
+  symbol ";"
+  CLet (toSymbol "_") c <$> comp
+
+comp :: Parser Comp
+comp = try semicolonSep <|> try (parens semicolonSep) <|> comp1
+
 
 term :: Parser Term
 term = C <$> try comp <|> E <$> exp

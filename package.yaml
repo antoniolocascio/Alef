@@ -108,8 +108,8 @@ version: 0.1.0.0
 extra-source-files:
 - README.md
 - ChangeLog.md
-author: Antonio Locascio
-github: antoniolocascio/Alef
+author: Author name here
+github: githubuser/Alef
 license: BSD3
 executables:
   alef:
@@ -121,4 +121,4 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - Alef
-description: Please see the README on GitHub at <https://github.com/antoniolocascio/Alef#readme>
+description: Please see the README on GitHub at <https://github.com/githubuser/Alef#readme>

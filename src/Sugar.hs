@@ -11,6 +11,7 @@ import           Eval
 import           Utils.Substitution            as Sub
 import           EffectRow
 import           SugarTypes
+import           Utils.Unique
 
 import           Control.Monad
 import           Data.Maybe                     ( fromMaybe )
@@ -18,7 +19,7 @@ import           Data.Maybe                     ( fromMaybe )
 import           Printing.PPTypes
 import           Printing.PPSubstitution
 import           Printing.PPAST
-
+import           Debug.Trace
 -- Syntactic sugar for multiple declarations with type annotations. 
 -- A file with the format:
 -- id1 : tau1
@@ -34,7 +35,7 @@ import           Printing.PPAST
 -- gets converted to a list of (Var, Type, Term). 
 -- An id only is available to the definitions after it.
 -- Every id (except for main) must be an expression.
--- After type-checking, the list gets converted to a nested let:
+-- The list gets converted to a nested let:
 -- let id1 =  val (def1 : tau1) in let id2 = ... in defMain.
 
 
@@ -111,10 +112,6 @@ renameAnnosC (CLet x c1 c2) = do
   c1' <- renameAnnosC c1
   c2' <- renameAnnosC c2
   return (CLet x c1' c2')
-renameAnnosC (CAnno c t) = do
-  (t', _) <- rename (CT t)
-  c'      <- renameAnnosC c
-  return (CAnno c' (toCT t'))
 
 renameAnnos :: (TypeChecker m) => Term -> m Term
 renameAnnos (E e) = renameAnnosE e >>= \e' -> return (E e')
@@ -130,11 +127,79 @@ renameDecTypes ((id, tau, def) : rest) = do
   rest'     <- renameDecTypes rest
   return ((id, tau', def') : rest')
 
-decsChecker :: (TypeChecker m, TypeEnv e) => e -> [Dec] -> m ()
-decsChecker _   []                      = return ()
-decsChecker env ((id, tau, def) : rest) = do
-  s <- checkType env def tau
-  decsChecker (extEnv id (apply s tau) env) rest
+
+isUnderscore = (== toSymbol "_")
+fillVar :: (UniqueGen m, Monad m) => Var -> m Var
+fillVar x
+  | isUnderscore x = do
+    n <- newUnique
+    return $ toSymbol ("_x" ++ show n)
+  | otherwise = return x
+
+fillUnderscoresE :: (UniqueGen m, Monad m) => Exp -> m Exp
+fillUnderscoresE (ESucc e  ) = fillUnderscoresE e >>= \e' -> return (ESucc e')
+fillUnderscoresE (EFunc x c) = do
+  z <- fillVar x
+  fillUnderscoresC c >>= \c' -> return (EFunc z c')
+fillUnderscoresE (EHand x cv cls) = do
+  z    <- fillVar x
+  cv'  <- fillUnderscoresC cv
+  cls' <- mapM
+    (\(op, x, k, ci) -> do
+      x'  <- fillVar x
+      k'  <- fillVar k
+      ci' <- fillUnderscoresC ci
+      return (op, x', k', ci')
+    )
+    cls
+  return (EHand z cv' cls')
+fillUnderscoresE (EAnno e t) = do
+  e' <- fillUnderscoresE e
+  return (EAnno e' t)
+fillUnderscoresE e = return e
+
+fillUnderscoresC :: (UniqueGen m, Monad m) => Comp -> m Comp
+fillUnderscoresC (CVal e      ) = fillUnderscoresE e >>= \e' -> return (CVal e')
+fillUnderscoresC (COp op e y c) = do
+  z  <- fillVar y
+  e' <- fillUnderscoresE e
+  c' <- fillUnderscoresC c
+  return (COp op e' z c')
+fillUnderscoresC (CWith e c) = do
+  e' <- fillUnderscoresE e
+  c' <- fillUnderscoresC c
+  return (CWith e' c')
+fillUnderscoresC (CApp e1 e2) = do
+  e1' <- fillUnderscoresE e1
+  e2' <- fillUnderscoresE e2
+  return (CApp e1' e2')
+fillUnderscoresC (CIf e c1 c2) = do
+  e'  <- fillUnderscoresE e
+  c1' <- fillUnderscoresC c1
+  c2' <- fillUnderscoresC c2
+  return (CIf e' c1' c2')
+fillUnderscoresC (CMatch e c1 x c2) = do
+  z   <- fillVar x
+  e'  <- fillUnderscoresE e
+  c1' <- fillUnderscoresC c1
+  c2' <- fillUnderscoresC c2
+  return (CMatch e' c1' z c2')
+fillUnderscoresC (CLet x c1 c2) = do
+  z   <- fillVar x
+  c1' <- fillUnderscoresC c1
+  c2' <- fillUnderscoresC c2
+  return (CLet z c1' c2')
+
+fillUnderscores :: (UniqueGen m, Monad m) => Term -> m Term
+fillUnderscores (E e) = fillUnderscoresE e >>= \e' -> return (E e')
+fillUnderscores (C c) = fillUnderscoresC c >>= \c' -> return (C c')
+
+fillUnderscoresDecs :: (UniqueGen m, Monad m) => [Dec] -> m [Dec]
+fillUnderscoresDecs []                      = return []
+fillUnderscoresDecs ((id, tau, def) : rest) = do
+  def'  <- fillUnderscores def
+  rest' <- fillUnderscoresDecs rest
+  return ((id, tau, def') : rest')
 
 -- | Desugar a list of declarations into a nested let, as explained before. 
 -- Declarations are assumed valid.
@@ -159,10 +224,8 @@ checkDecs
 checkDecs (sigM, decs) = validDecs decs >> runTC (renameAndCheck decs)
  where
   renameAndCheck decs = do
-    decs' <- renameDecTypes decs
-    let sig = sigma ++ fromMaybe [] sigM
-    decsChecker (initEnv sig) decs'
-    -- Sanity check: type still checks after desugaring.
+    decs' <- fillUnderscoresDecs decs >>= renameDecTypes
+    let sig             = sigma ++ fromMaybe [] sigM
     let (dsTau, dsTerm) = desugarDecs decs'
     s <- checkType (initEnv sig) dsTerm dsTau
     return (dsTau, dsTerm, s, sig)

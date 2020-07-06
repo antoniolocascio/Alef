@@ -3,17 +3,16 @@
 signature {
     Get: unit -> nat
   , Set: nat -> unit
+  , Print : nat -> unit
 }
 
-st : nat<Get, Set | mu> ->> (nat -> nat<mu>)<mu>
+st : nat<Get, Set | μ> ->> (nat -> nat<μ>)<μ>
 st = handler 
-      val x    -> val (fun s -> val x),
-      {Get u k -> val (fun s -> let f = k s in f s),
-       Set x k -> val (fun s -> let f = k () in f x)};;
+      val x    -> val (fun _ -> val x),
+      {Get _ k -> val (fun s -> let f = k s in f s),
+       Set x k -> val (fun _ -> let f = k () in f x)};;
 
-main : nat<mu>
+main : nat<Print | μ>
 main =  let comp = with st handle 
-                    (let x = Set(1) in 
-                     let y = Get() in 
-                     val y) 
+                    (Set(1); Print(42); Get()) 
         in comp 0

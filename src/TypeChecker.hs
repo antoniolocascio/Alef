@@ -1,5 +1,6 @@
 module TypeChecker where
 
+import           Data.Maybe                     ( maybe )
 import           Utils.Error
 import           Utils.Symbol
 import           Utils.Substitution            as Sub
@@ -21,6 +22,7 @@ import qualified Data.Map.Strict               as M
 import           Printing.PPTypes
 import           Printing.PPSubstitution
 import           Printing.PPAST
+import           Debug.Trace
 
 
 class (Monad m, Fallible m, FreshGen m) => TypeChecker m where
@@ -34,7 +36,12 @@ synthType
 -- Var
 synthType tenv (E (EVar x)) = do
   t <- lookupVar x tenv
-  return (t, Sub.empty)
+  case t of
+    (Left  (VT vt   )) -> return (VT vt, Sub.empty)
+    (Right (TS bv pt)) -> do
+      rho <- renameBVs (toList bv)
+      return (apply rho pt, Sub.empty)
+
 -- Zero
 synthType tenv (     E EZero    ) = return (VT TNat, Sub.empty)
 -- Succ
@@ -52,12 +59,7 @@ synthType tenv (E EUnit      ) = return (VT TUnit, Sub.empty)
 -- EAnno
 synthType tenv (E (EAnno e t)) = do
   let t' = VT t
-  s2 <- checkTypeS tenv (E e) t'
-  return (apply s2 t', s2)
--- CAnno
-synthType tenv (C (CAnno c t)) = do
-  let t' = CT t
-  s2 <- checkTypeS tenv (C c) t'
+  s2 <- checkType tenv (E e) t'
   return (apply s2 t', s2)
 -- Val
 synthType tenv term@(C (CVal e)) = do
@@ -77,7 +79,7 @@ synthType tenv ctx@(C (CApp e1 e2)) = do
 synthType tenv (C (COp op e y c)) = do
   (TOp aop bop) <- lookupOp op tenv
   s             <- checkTypeS tenv (E e) (VT aop)
-  (ct, eta)     <- synthType (extEnv y (apply s (VT bop)) tenv) (C c)
+  (ct, eta)     <- synthType (extEnv y (apply s (Left $ VT bop)) tenv) (C c)
   case ct of
     (CT (TComp a e)) -> do
       mu' <- newFreshVar
@@ -97,7 +99,11 @@ synthType tenv (C (CLet x c1 c2)) = do
   (ta, eta1) <- synthType tenv (C c1)
   case ta of
     (CT (TComp a e')) -> do
-      (tb, eta2) <- synthType (apply eta1 (extEnv x (VT a) tenv)) (C c2)
+      let tenv' = apply eta1 tenv
+          fvs   = fromList (fv_env tenv')
+      (tb, eta2) <- synthType
+        (extEnv x (Right $ TS (diff (fromList (fv $ VT a)) fvs) (VT a)) tenv')
+        (C c2)
       case tb of
         (CT (TComp b e)) -> do
           s <- instRows (apply eta2 e') e
@@ -114,7 +120,7 @@ synthType tenv t@(C (CIf e c1 c2)) = do
 synthType tenv (C (CMatch e c1 x c2)) = do
   checkType tenv (E e) (VT TNat)
   (ct, eta) <- synthType tenv (C c1)
-  s         <- checkTypeS (extEnv x (VT TNat) (apply eta tenv)) (C c2) ct
+  s         <- checkTypeS (extEnv x (Left $ VT TNat) (apply eta tenv)) (C c2) ct
   return (apply s ct, eta ° s)
 synthType _ term = throw $ cannotSynth term
 
@@ -129,7 +135,7 @@ checkTypeS
 checkTypeS tenv (C (CVal e)) (CT (TComp a er)) = checkTypeS tenv (E e) (VT a)
 -- Fun
 checkTypeS tenv term@(E (EFunc x c)) t = case t of
-  VT (TFunc a ct) -> checkTypeS (extEnv x (VT a) tenv) (C c) (CT ct)
+  VT (TFunc a ct) -> checkTypeS (extEnv x (Left $ VT a) tenv) (C c) (CT ct)
   _               -> throw $ notAFunction term term t
 -- Hand
 checkTypeS tenv h@(E (EHand x cv opClauses)) t = case t of
@@ -138,33 +144,21 @@ checkTypeS tenv h@(E (EHand x cv opClauses)) t = case t of
     checkDeterministic opClauses
     let hops = fromList $ (\(op, _, _, _) -> op) <$> opClauses
     checkOpsInDeltaPr dl hops dl' h
-    s0 <- checkTypeS (extEnv x (VT a) tenv) (C cv) (CT bt)
+    s0 <- checkTypeS (extEnv x (Left $ VT a) tenv) (C cv) (CT bt)
     checkOpClauses tenv opClauses bt s0
 -- CS
 checkTypeS tenv t tau = do
   (tau', eta) <- synthType tenv t
   sigma       <- instTypes tau' tau t
-  return (unify eta sigma)
+  return (eta ° sigma)
 
 
-
-unify
-  :: Substitution EffVar EffRow
-  -> Substitution EffVar EffRow
-  -> Substitution EffVar EffRow
-unify s1 s2 =
-  let
-    d1  = Sub.dom s1
-    d2  = Sub.dom s2
-    int = L.intersect d1 d2
-    b   = all
-      (\mu -> effVar (apply s2 (emptyRow mu))
-        == effVar (apply (s1 ° s2) (emptyRow mu))
-      )
-      int
-  in
-    if b then s1 °^ s2 else s1 ° s2
-
+renameBVs :: TypeChecker m => [EffVar] -> m (Substitution EffVar EffRow)
+renameBVs bvs = do
+  newVars <- mapM (\_ -> newFreshVar) bvs
+  return $ foldr (\(k, r) -> Sub.insert k r)
+                 Sub.empty
+                 (zip bvs (emptyRow <$> newVars))
 
 rename :: TypeChecker m => Type -> m (Type, Substitution EffVar EffRow)
 rename (VT vt) = do
@@ -216,7 +210,25 @@ checkType
   -> m (Substitution EffVar EffRow)
 checkType tenv t tau = do
   s <- checkTypeS tenv t tau
-  if ri (dres s (fv tau)) renaming then return s else throw $ notAlphaEq tau s t
+  if ri (dres s (fv tau)) renaming
+    then return s
+    else throw $ notAlphaEq tau s (Right t)
+
+-- | Checking judgment for top-level declarations.
+-- Identical to checkType but for additional error information.
+-- | Convetional checking judgment, the resulting substitution can be ignored.
+checkTypeDec
+  :: (TypeChecker m, TypeEnv e)
+  => e
+  -> Term
+  -> Type
+  -> Var
+  -> m (Substitution EffVar EffRow)
+checkTypeDec tenv t tau id = do
+  s <- checkTypeS tenv t tau
+  if ri (dres s (fv tau)) renaming
+    then return s
+    else throw $ notAlphaEq tau s (Left id)
 
 
 -- Helper functions for Hand rule 
@@ -251,7 +263,7 @@ checkOpClauses
 checkOpClauses _    []                          _  theta = return theta
 checkOpClauses tenv ((opi, x, k, ci) : clauses) bt theta = do
   (TOp ai bi) <- lookupOp opi tenv
-  let tenv' = extEnv k (VT (TFunc bi bt)) (extEnv x (VT ai) tenv)
+  let tenv' = extEnv k (Left $ VT (TFunc bi bt)) (extEnv x (Left $ VT ai) tenv)
   si <- checkTypeS (apply theta tenv') (C ci) (apply theta (CT bt))
   checkOpClauses tenv clauses bt (theta ° si)
 

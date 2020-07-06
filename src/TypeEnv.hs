@@ -8,18 +8,20 @@ import           Utils.Error
 import           Utils.Substitution
 import           Operation
 import           EffectRow
+import           Data.Either
 import qualified Data.Map.Strict               as M
 
 -- | Type class of typing environments.
 class (Substitutable e EffVar EffRow) => TypeEnv e where
-  lookupVar :: Fallible m => EffVar -> e -> m Type
+  lookupVar :: Fallible m => EffVar -> e -> m (Either Type TypeScheme)
   lookupOp :: Fallible m => Operation -> e -> m OpType
-  extEnv :: EffVar -> Type -> e -> e
-  vars :: e -> [(EffVar, Type)]
+  extEnv :: Var -> Either Type TypeScheme -> e -> e
+  vars :: e -> [(Var, Either Type TypeScheme)]
   ops :: e -> [(Operation, OpType)]
+  fv_env :: e -> [EffVar]
 
 -- | Concrete type environment.
-data EnvC = Env {vEnv :: M.Map EffVar Type, opEnv :: M.Map Operation OpType}
+data EnvC = Env {vEnv :: M.Map Var (Either Type TypeScheme), opEnv :: M.Map Operation OpType}
 
 initEnv :: [(Operation, OpType)] -> EnvC
 initEnv sigma = Env { vEnv = M.empty, opEnv = M.fromList sigma }
@@ -43,4 +45,5 @@ instance TypeEnv EnvC where
   extEnv x t env = Env { vEnv = M.insert x t (vEnv env), opEnv = opEnv env }
   vars = M.toList . vEnv
   ops  = M.toList . opEnv
+  fv_env env = concatMap (either fv fvTS . snd) (M.toList $ vEnv env)
 

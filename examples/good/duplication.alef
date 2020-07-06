@@ -26,11 +26,11 @@ main =  let h = excToNat 10 in
 
 
 -- Distinct (behaviour)
--- Exceptions raised by dec are handled by h2 (by returning 0) while
+-- Exceptions raised by dec are handled by h2 (by returning 1) while
 -- those raised by crash1 are handled by h1.
 main : nat<mu>
 main =  let h1 = excToNat 10 in 
-        let h2 = excToNat 0 in 
+        let h2 = excToNat 1 in 
         with h1 handle (let x = (with h2 handle dec 0) in crash1 x) 
 
 
