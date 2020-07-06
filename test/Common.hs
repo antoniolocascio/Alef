@@ -52,8 +52,7 @@ k = toSymbol "k"
 toComp :: Term -> Comp
 toComp (C c) = c
 
--- Ejemplos
--- Ejemplo 1 - Figura 4
+
 p1 :: Term
 p1 = C $ CLet (toSymbol "x") (gop pr one) (CVal EZero)
 t1 :: Type
@@ -62,7 +61,6 @@ t1 = CT $ TComp TNat (insert pr empty, toSymbol "mu0")
 e1 :: EnvC
 e1 = initEnv sigma
 
--- Ejemplo 2 - Figura 5
 p2 :: Term
 p2 = C $ CWith (EVar $ toSymbol "h") (CApp (EVar $ toSymbol "c") EUnit)
 e2 :: EnvC
@@ -77,7 +75,6 @@ e2 =
         $ extEnv (toSymbol "h") (Left ht) (initEnv sigma)
 
 
--- Ejemplo 3 - Figura 6 
 p3_1 :: Term
 p3_1 = E $ EFunc (toSymbol "f") (CApp (EVar (toSymbol "f")) EUnit)
 t3_1 :: Type
@@ -99,7 +96,6 @@ e3_2 =
   in  extEnv (toSymbol "crash") (Left crasht)
         $ extEnv (toSymbol "apply") (Left applyt) (initEnv sigma)
 
--- Ejemplo 4 - Figura 7 
 p4 :: Term
 p4 = E $ EHand
   x
@@ -120,7 +116,6 @@ t4 = VT $ THand (TComp TUnit (insert pr empty, toSymbol "mu1"))
 e4 :: EnvC
 e4 = initEnv sigma
 
--- Ejemplo 5 
 c5 :: Comp
 c5 = CWith
   (EAnno
