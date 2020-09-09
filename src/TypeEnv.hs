@@ -2,14 +2,16 @@
 
 module TypeEnv where
 
-import           Types
+import qualified Data.Map.Strict               as M
+import           Data.Either
+
 import           Utils.Symbol
 import           Utils.Error
 import           Utils.Substitution
+
+import           Types
 import           Operation
 import           EffectRow
-import           Data.Either
-import qualified Data.Map.Strict               as M
 
 -- | Type class of typing environments.
 class (Substitutable e EffVar EffRow) => TypeEnv e where
@@ -21,7 +23,10 @@ class (Substitutable e EffVar EffRow) => TypeEnv e where
   fv_env :: e -> [EffVar]
 
 -- | Concrete type environment.
-data EnvC = Env {vEnv :: M.Map Var (Either Type TypeScheme), opEnv :: M.Map Operation OpType}
+data EnvC = Env
+  { vEnv  :: M.Map Var (Either Type TypeScheme)
+  , opEnv :: M.Map Operation OpType
+  }
 
 initEnv :: [(Operation, OpType)] -> EnvC
 initEnv sigma = Env { vEnv = M.empty, opEnv = M.fromList sigma }

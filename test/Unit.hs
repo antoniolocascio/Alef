@@ -1,9 +1,11 @@
+import           System.Directory
+
 import           Printing.PPTypes
 import           Printing.PPSubstitution
 import           Printing.PPAST
+
 import           Sugar
 import           Parser.Parser
-import           System.Directory
 import           Common
 
 shouldType :: FilePath -> IO ()

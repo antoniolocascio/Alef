@@ -5,12 +5,13 @@ module Utils.Substitution where
 
 import           Prelude                 hiding ( lookup )
 import qualified Data.Map.Strict               as M
-
-import           Utils.Symbol                  as Sym
-                                                ( EffVar )
 import           Data.Maybe                     ( fromMaybe )
 import qualified Data.List                     as L
 import qualified Data.Set                      as S
+
+import           Utils.Symbol                  as Sym
+                                                ( EffVar )
+
 
 -- | Type class of possible substitution index types. 
 -- Ord constraint should be enough.

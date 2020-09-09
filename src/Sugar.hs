@@ -1,25 +1,26 @@
 module Sugar where
 
-import           TypeChecker
-import           TypeEnv
-import           Operation
-import           Types
-import           Utils.Symbol
-import           Utils.Error
-import           AST
-import           Eval
-import           Utils.Substitution            as Sub
-import           EffectRow
-import           SugarTypes
-import           Utils.Unique
-
 import           Control.Monad
 import           Data.Maybe                     ( fromMaybe )
+
+import           Utils.Symbol
+import           Utils.Error
+import           Utils.Unique
+import           Utils.Substitution            as Sub
 
 import           Printing.PPTypes
 import           Printing.PPSubstitution
 import           Printing.PPAST
-import           Debug.Trace
+
+import           TypeChecker
+import           TypeEnv
+import           Operation
+import           Types
+import           AST
+import           Eval
+import           EffectRow
+import           SugarTypes
+
 -- Syntactic sugar for multiple declarations with type annotations. 
 -- A file with the format:
 -- id1 : tau1
@@ -68,67 +69,9 @@ validDecs decs = do
   mainIsComp decs = unless ((\(_, t, _) -> isComp t) (last decs))
     $ Left "Main must be a computation."
 
-
-renameAnnosE :: (TypeChecker m) => Exp -> m Exp
-renameAnnosE (ESucc e       ) = renameAnnosE e >>= \e' -> return (ESucc e')
-renameAnnosE (EFunc x c     ) = renameAnnosC c >>= \c' -> return (EFunc x c')
-renameAnnosE (EHand x cv cls) = do
-  cv'  <- renameAnnosC cv
-  cls' <- mapM
-    (\(op, x, k, ci) -> renameAnnosC ci >>= \ci' -> return (op, x, k, ci'))
-    cls
-  return (EHand x cv' cls')
-renameAnnosE (EAnno e t) = do
-  (t', _) <- rename (VT t)
-  e'      <- renameAnnosE e
-  return (EAnno e' (toVT t'))
-renameAnnosE e = return e
-
-renameAnnosC :: (TypeChecker m) => Comp -> m Comp
-renameAnnosC (CVal e      ) = renameAnnosE e >>= \e' -> return (CVal e')
-renameAnnosC (COp op e y c) = do
-  e' <- renameAnnosE e
-  c' <- renameAnnosC c
-  return (COp op e' y c')
-renameAnnosC (CWith e c) = do
-  e' <- renameAnnosE e
-  c' <- renameAnnosC c
-  return (CWith e' c')
-renameAnnosC (CApp e1 e2) = do
-  e1' <- renameAnnosE e1
-  e2' <- renameAnnosE e2
-  return (CApp e1' e2')
-renameAnnosC (CIf e c1 c2) = do
-  e'  <- renameAnnosE e
-  c1' <- renameAnnosC c1
-  c2' <- renameAnnosC c2
-  return (CIf e' c1' c2')
-renameAnnosC (CMatch e c1 x c2) = do
-  e'  <- renameAnnosE e
-  c1' <- renameAnnosC c1
-  c2' <- renameAnnosC c2
-  return (CMatch e' c1' x c2')
-renameAnnosC (CLet x c1 c2) = do
-  c1' <- renameAnnosC c1
-  c2' <- renameAnnosC c2
-  return (CLet x c1' c2')
-
-renameAnnos :: (TypeChecker m) => Term -> m Term
-renameAnnos (E e) = renameAnnosE e >>= \e' -> return (E e')
-renameAnnos (C c) = renameAnnosC c >>= \c' -> return (C c')
-
-renameDecTypes :: (TypeChecker m) => [Dec] -> m [Dec]
-renameDecTypes [(idMain, tMain, main)] = do
-  main' <- renameAnnos main
-  return [(idMain, tMain, main')]
-renameDecTypes ((id, tau, def) : rest) = do
-  (tau', _) <- rename tau
-  def'      <- renameAnnos def
-  rest'     <- renameDecTypes rest
-  return ((id, tau', def') : rest')
-
-
+isUnderscore :: Symbol -> Bool
 isUnderscore = (== toSymbol "_")
+
 fillVar :: (UniqueGen m, Monad m) => Var -> m Var
 fillVar x
   | isUnderscore x = do
@@ -189,6 +132,9 @@ fillUnderscoresC (CLet x c1 c2) = do
   c1' <- fillUnderscoresC c1
   c2' <- fillUnderscoresC c2
   return (CLet z c1' c2')
+fillUnderscoresC (CAnno c t) = do
+  c' <- fillUnderscoresC c
+  return (CAnno c' t)
 
 fillUnderscores :: (UniqueGen m, Monad m) => Term -> m Term
 fillUnderscores (E e) = fillUnderscoresE e >>= \e' -> return (E e')
@@ -208,10 +154,11 @@ desugarDecs decs = (getMainType decs, desugarDecs' decs)
  where
   getMainType decs = (\(_, tmain, _) -> tmain) (last decs)
   toValT (VT t) = t
+  toCT (CT t) = t
   toExp (E e) = e
   toComp (C c) = c
   desugarDecs' :: [Dec] -> Term
-  desugarDecs' [(_, _, main)         ] = main
+  desugarDecs' [(_, tau, main)       ] = C $ CAnno (toComp main) (toCT tau)
   desugarDecs' ((id, tau, def) : decs) = C $ CLet
     id
     (CVal (EAnno (toExp def) (toValT tau)))
@@ -224,7 +171,7 @@ checkDecs
 checkDecs (sigM, decs) = validDecs decs >> runTC (renameAndCheck decs)
  where
   renameAndCheck decs = do
-    decs' <- fillUnderscoresDecs decs >>= renameDecTypes
+    decs' <- fillUnderscoresDecs decs
     let sig             = sigma ++ fromMaybe [] sigM
     let (dsTau, dsTerm) = desugarDecs decs'
     s <- checkType (initEnv sig) dsTerm dsTau

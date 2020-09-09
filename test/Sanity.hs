@@ -1,18 +1,21 @@
+import           Data.Either                    ( isRight )
+import           Test.QuickCheck
+
+import           Utils.Symbol
+import           Utils.Set
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
 import           TypeEnv
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
 import           Eval
 import           Common
 import           QCInstances
-import           Test.QuickCheck
-import           Data.Either                    ( isRight )
 
 main :: IO ()
 main =

@@ -1,13 +1,15 @@
+import           Utils.Symbol
+import           Utils.Set
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
 import           TypeEnv
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
 import           Common
 
 main :: IO ()

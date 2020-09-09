@@ -1,20 +1,25 @@
+import           Utils.Symbol
+import           Utils.Set
+
+import           Parser.Parser
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
 import           TypeEnv
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
 import           Common
-import           Parser.Parser
 import           QCInstances
+
 import           Test.QuickCheck
 
 main :: IO ()
-main = quickCheckWith stdArgs{maxSize = 20}  $ withMaxSuccess 1000  prop_parses
+main =
+  quickCheckWith stdArgs { maxSize = 20 } $ withMaxSuccess 1000 prop_parses
 
 instance Show Type where
   show = renderType

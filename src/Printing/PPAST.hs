@@ -1,14 +1,16 @@
 module Printing.PPAST where
 
 import           Prelude                 hiding ( (<>) )
-import           Operation
+import           Text.PrettyPrint
+
 import           Utils.Symbol
 import qualified Utils.Set                     as S
-import           Types
---import           EffectRow
-import           AST
+
 import           Printing.PPTypes
-import           Text.PrettyPrint
+
+import           Operation
+import           Types
+import           AST
 
 tabW :: Int
 tabW = 2

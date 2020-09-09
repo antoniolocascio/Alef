@@ -1,14 +1,16 @@
 module Eval where
 
+import           Control.Monad.Except
+import           Data.Bifunctor                 ( first )
 import           Utils.Substitution
+import           Utils.Symbol
+import           Utils.Error
+
 import           AST
 import           Types
 import           Operation
-import           Utils.Symbol
-import           Utils.Error
 import           TypeEnv
 import           EffectRow
-import           Control.Monad.Except
 
 -- | Small-step semantics.
 step :: (Fallible m, TypeEnv e) => e -> Comp -> m Comp
@@ -38,6 +40,7 @@ step te (CWith h@(EAnno (EHand _ _ clauses) (THand _ bt)) (COp op e y c)) =
 step te (CWith h c) = do
   c' <- step te c
   return $ CWith h c'
+step te (CAnno c _) = return c
 
 getClause
   :: Operation
@@ -64,6 +67,7 @@ removeAnnosC (CIf e c1 c2) =
 removeAnnosC (CLet x c1 c2) = CLet x (removeAnnosC c1) (removeAnnosC c2)
 removeAnnosC (CMatch e c1 x c2) =
   CMatch (removeAnnosE e) (removeAnnosC c1) x (removeAnnosC c2)
+removeAnnosC (CAnno c _) = removeAnnosC c
 
 removeAnnosE :: Exp -> Exp
 removeAnnosE (ESucc e  ) = ESucc $ removeAnnosE e
@@ -100,7 +104,7 @@ runStep e = runExcept . step e . removeAnnosC
 --  
 
 runSteps :: EnvC -> (Comp, Maybe CType) -> Either Error Comp
-runSteps e = runExcept . steps e . (\(c, ct) -> (removeAnnosC c, ct))
+runSteps e = runExcept . steps e . first removeAnnosC
 
 instance Fallible SmallStepperC where
   throw = throwError

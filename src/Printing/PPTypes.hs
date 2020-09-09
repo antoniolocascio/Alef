@@ -1,12 +1,14 @@
 module Printing.PPTypes where
 
 import           Prelude                 hiding ( (<>) )
-import           Operation
+import           Text.PrettyPrint
+
 import           Utils.Symbol
 import qualified Utils.Set                     as S
+
 import           Types
 import           EffectRow
-import           Text.PrettyPrint
+import           Operation
 
 pipe :: Doc
 pipe = text "|"

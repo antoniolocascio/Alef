@@ -1,21 +1,24 @@
+import           Data.Either                    ( isRight
+                                                , fromRight
+                                                )
+import           Test.QuickCheck
+
+import           Utils.Symbol
+import           Utils.Set
+import           Utils.Error
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
-import           Utils.Error
 import           TypeEnv
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
 import           Eval
 import           Common
-import           Test.QuickCheck
 import           QCInstances
-import           Data.Either                    ( isRight
-                                                , fromRight
-                                                )
 
 main :: IO ()
 main = quickCheckWith (stdArgs { maxSize = 50, maxSuccess = 10000 }) prop_step

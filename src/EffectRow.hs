@@ -1,11 +1,14 @@
 module EffectRow where
 
 import           Prelude                 hiding ( lookup )
+import           Data.Maybe                     ( fromMaybe )
+
 import           Utils.Set                     as Set
-import           Operation
 import           Utils.Substitution            as Sub
 import           Utils.Symbol                   ( EffVar )
-import           Data.Maybe                     ( fromMaybe )
+
+import           Operation
+
 
 -- | Delta is just a type synonym of Set Op
 type Delta = Set.Set Operation

@@ -1,19 +1,27 @@
 module Utils.Error where
 
-import           Types
+import           Data.Either                    ( either )
+
+import           Utils.Substitution
+import           Utils.Symbol
+
 import           Printing.PPTypes
 import           Printing.PPAST
 import           Printing.PPSubstitution
-import           Utils.Substitution
+
+import           Types
 import           AST
 import           EffectRow
-import           Utils.Symbol
-import           Data.Either                    ( either )
 
 type Error = String
 
 class Monad m => Fallible m where
   throw :: Error -> m a
+  withId :: Symbol -> m a -> m a
+  withId _ = id
+  getId :: m (Maybe Symbol)
+  getId = return Nothing
+  {-# MINIMAL throw #-}
 
 typeError :: Type -> Type -> Term -> Error
 typeError expT synthT term =
@@ -93,7 +101,7 @@ notAlphaEq t sub term =
     ++ "Actual type: "
     ++ renderType (apply sub t)
     ++ "\n"
-    ++ "For Term:\n"
+    ++ "For Term: "
     ++ renderTerm (either (E . EVar) id term)
 
 diffEffVarsHand :: EffVar -> EffVar -> Term -> Error

@@ -3,12 +3,15 @@
 module AST where
 
 import           Prelude                 hiding ( lookup )
-import           Types
-import           Utils.Symbol
-import           Operation
-import           Utils.Substitution
-import           EffectRow
 import           Data.Maybe                     ( fromMaybe )
+
+import           Utils.Symbol
+import           Utils.Substitution
+
+import           Types
+import           Operation
+import           EffectRow
+
 
 -- | A term can be a pure expression or an effectful computation.
 data Term = E Exp | C Comp deriving (Eq)
@@ -54,6 +57,7 @@ data Comp where
   CLet ::Var -> Comp -> Comp -> Comp
   -- | Match
   CMatch ::Exp -> Comp -> Var -> Comp -> Comp
+  CAnno ::Comp -> CType -> Comp
  deriving (Eq)
 
 -- | Substitutable instance for Exp EffVar EffRow
@@ -77,6 +81,7 @@ instance Substitutable Comp EffVar EffRow where
   apply sub (CMatch e c1 x c2) =
     CMatch (apply sub e) (apply sub c1) x (apply sub c2)
   apply sub (CLet x c1 c2) = CLet x (apply sub c1) (apply sub c2)
+  apply sub (CAnno c t   ) = CAnno (apply sub c) (apply sub t)
 
 -- | Substitutable instance for Exp Var Exp
 instance Substitutable Exp Var Exp where
@@ -85,8 +90,8 @@ instance Substitutable Exp Var Exp where
   apply sub (EHand x cv ops) =
     let cv' = apply (ignore x sub) cv
         ops' =
-            (\(op, y, k, ci) -> (op, y, k, apply (ignore y $ ignore k sub) ci))
-              <$> ops
+          (\(op, y, k, ci) -> (op, y, k, apply (ignore y $ ignore k sub) ci))
+            <$> ops
     in  EHand x cv' ops'
   apply sub (ESucc e  ) = ESucc $ apply sub e
   apply sub (EAnno e t) = EAnno (apply sub e) t
@@ -102,6 +107,7 @@ instance Substitutable Comp Var Exp where
   apply sub (CMatch e c1 x c2) =
     CMatch (apply sub e) (apply sub c1) x (apply (ignore x sub) c2)
   apply sub (CLet x c1 c2) = CLet x (apply sub c1) (apply (ignore x sub) c2)
+  apply sub (CAnno c t   ) = CAnno (apply sub c) t
 
 -- | Ignore a variable in a substitution. Used for bound variables.
 ignore :: Var -> Substitution Var Exp -> Substitution Var Exp

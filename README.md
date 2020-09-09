@@ -14,10 +14,10 @@ To install Alef you should clone this repository, move into the root directory a
 
 ```
 stack setup
-stack install
+stack build
 ```
 
-This will install an executable called `alef`.
+This will build an executable called `alef`, which can be found in the `.stack-work` directory.
 
 ## Running an Alef program
 
@@ -25,5 +25,5 @@ You can find many examples of Alef programs in the directory `examples`.
 The command that runs an Alef program is:
 
 ```
-alef program.alef
+stack exec alef examples/good/state.alef
 ```

@@ -3,18 +3,19 @@ module Parser.Parser where
 import           Prelude                 hiding ( exp )
 import           Text.Parsec
 import           Text.Parsec.String             ( Parser )
-
 import qualified Text.Parsec.Expr              as Ex
 import qualified Text.Parsec.Token             as Tok
 
+import           Utils.Error
+import           Utils.Symbol
+
 import           Parser.Lexer
+
 import           AST
 import           Types
 import           SugarTypes
-import           Utils.Symbol
 import           Operation
 import           EffectRow
-import           Utils.Error
 
 -- Type Parser
 

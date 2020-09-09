@@ -1,23 +1,25 @@
+import           Data.Either                    ( isRight
+                                                , fromRight
+                                                )
+import           Test.QuickCheck
+
+import           Utils.Symbol
+import           Utils.Set
+import           Utils.Substitution             ( apply )
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
-import           Utils.Substitution             ( apply )
 import           TypeEnv
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
 import           Eval
 import           Common
 import           EffectRow
 import           QCInstances
-import           Test.QuickCheck
--- import           Test.QuickCheck.Property
-import           Data.Either                    ( isRight
-                                                , fromRight
-                                                )
 
 main :: IO ()
 main = do

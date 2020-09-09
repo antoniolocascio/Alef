@@ -1,13 +1,15 @@
 module RowUnification where
 
-import           EffectRow
-import           Types
+
 import           Utils.Substitution
 import           Utils.Symbol
 import           Utils.Set                      ( diff
                                                 , symDiff
                                                 )
 import           Utils.Error
+
+import           EffectRow
+import           Types
 import           FreshVars
 import           AST
 

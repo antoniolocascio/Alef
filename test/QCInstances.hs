@@ -1,19 +1,22 @@
 module QCInstances where
 
 import           Test.QuickCheck
-import           AST
-import           Types
 import           Data.Either
+import           Data.Maybe                     ( fromJust )
+
 import           Utils.Symbol
 import qualified Utils.Substitution            as Sub
 import qualified Utils.Set                     as S
+
 import           Printing.PPTypes
 import           Printing.PPAST
+
+import           AST
+import           Types
 import           Common
 import           Operation
 import           EffectRow
 import           TypeEnv
-import           Data.Maybe                     ( fromJust )
 
 -- | Arbitrary instance for Value Types
 instance Arbitrary VType where

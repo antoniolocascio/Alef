@@ -1,29 +1,33 @@
 module TypeChecker where
 
 import           Data.Maybe                     ( maybe )
+import qualified Data.List                     as L
+import           Control.Monad.State
+import           Control.Monad.Except
+import           Control.Monad.Fail
+import qualified Data.Map.Strict               as M
+import           Data.Bifunctor                 ( first
+                                                , second
+                                                )
+
 import           Utils.Error
 import           Utils.Symbol
 import           Utils.Substitution            as Sub
 import           Utils.Set
 import           Utils.Unique
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
+
 import           FreshVars
 import           TypeEnv
 import           AST
 import           Types
 import           EffectRow
 import           RowUnification
-import qualified Data.List                     as L
 import           Operation
-import           Control.Monad.State
-import           Control.Monad.Except
-import           Control.Monad.Fail
-import qualified Data.Map.Strict               as M
-
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
-import           Debug.Trace
-
 
 class (Monad m, Fallible m, FreshGen m) => TypeChecker m where
 
@@ -61,6 +65,11 @@ synthType tenv (E (EAnno e t)) = do
   let t' = VT t
   s2 <- checkType tenv (E e) t'
   return (apply s2 t', s2)
+-- CAnno
+synthType tenv (C (CAnno c t)) = do
+  let t' = CT t
+  s2 <- checkType tenv (C c) t'
+  return (apply s2 t', s2)
 -- Val
 synthType tenv term@(C (CVal e)) = do
   (te, eta) <- synthType tenv (E e)
@@ -89,6 +98,7 @@ synthType tenv (C (COp op e y c)) = do
 -- With
 synthType tenv ctx@(C (CWith h c)) = do
   (th, eta) <- synthType tenv (E h)
+  -- id        <- getId
   case th of
     (VT (THand ct dt)) -> do
       s <- checkTypeS (apply eta tenv) (C c) (CT ct)
@@ -96,7 +106,7 @@ synthType tenv ctx@(C (CWith h c)) = do
     _ -> throw $ notAHandler (E h) ctx th
 -- Let
 synthType tenv (C (CLet x c1 c2)) = do
-  (ta, eta1) <- synthType tenv (C c1)
+  (ta, eta1) <- withId x (synthType tenv (C c1))
   case ta of
     (CT (TComp a e')) -> do
       let tenv' = apply eta1 tenv
@@ -149,16 +159,15 @@ checkTypeS tenv h@(E (EHand x cv opClauses)) t = case t of
 -- CS
 checkTypeS tenv t tau = do
   (tau', eta) <- synthType tenv t
-  sigma       <- instTypes tau' tau t
+  nameM       <- getId
+  sigma       <- instTypes tau' tau (maybe t (E . EVar) nameM)
   return (eta ° sigma)
 
 
 renameBVs :: TypeChecker m => [EffVar] -> m (Substitution EffVar EffRow)
 renameBVs bvs = do
-  newVars <- mapM (\_ -> newFreshVar) bvs
-  return $ foldr (\(k, r) -> Sub.insert k r)
-                 Sub.empty
-                 (zip bvs (emptyRow <$> newVars))
+  newVars <- mapM (const newFreshVar) bvs
+  return $ foldr (uncurry Sub.insert) Sub.empty (zip bvs (emptyRow <$> newVars))
 
 rename :: TypeChecker m => Type -> m (Type, Substitution EffVar EffRow)
 rename (VT vt) = do
@@ -209,10 +218,11 @@ checkType
   -> Type
   -> m (Substitution EffVar EffRow)
 checkType tenv t tau = do
-  s <- checkTypeS tenv t tau
+  s     <- checkTypeS tenv t tau
+  nameM <- getId
   if ri (dres s (fv tau)) renaming
     then return s
-    else throw $ notAlphaEq tau s (Right t)
+    else throw $ notAlphaEq tau s (maybe (Right t) Left nameM)
 
 -- | Checking judgment for top-level declarations.
 -- Identical to checkType but for additional error information.
@@ -269,12 +279,12 @@ checkOpClauses tenv ((opi, x, k, ci) : clauses) bt theta = do
 
 
 -- Concrete instances. 
-type St = Integer
+type St = (Integer, Maybe Symbol)
 
 type TypeCheckerC = StateT St (Except Error)
 
 initialSt :: St
-initialSt = 0
+initialSt = (0, Just (toSymbol "main"))
 
 runTC :: TypeCheckerC a -> Either Error a
 runTC = runExcept . flip evalStateT initialSt
@@ -287,8 +297,17 @@ runSynth tenv t = runTC (synthType tenv t)
 
 instance Fallible TypeCheckerC where
   throw = throwError
+  getId = gets snd
+  withId id m = do
+    (n, oldId) <- get
+    put (n, Just id)
+    a       <- m
+
+    (n', _) <- get
+    put (n', oldId)
+    return a
 
 instance UniqueGen TypeCheckerC where
-  newUnique = modify (+ 1) >> get
+  newUnique = modify (first (+ 1)) >> gets fst
 
 instance TypeChecker TypeCheckerC where

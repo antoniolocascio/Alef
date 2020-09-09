@@ -1,10 +1,10 @@
 module Parser.Lexer where
 
 import qualified Data.Text                     as T
-
 import           Text.Parsec
 import qualified Text.Parsec.Token             as Tok
 import qualified Text.Parsec.Text              as PT
+
 import           AST
 
 lexer :: Tok.TokenParser ()

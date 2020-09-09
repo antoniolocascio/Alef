@@ -1,10 +1,11 @@
 module SugarTypes where
 
+import           Utils.Symbol
+
 import           AST
 import           Types
 import           Operation
 import           EffectRow
-import           Utils.Symbol
 
 -- | Type synonym for a declaration.
 type Dec = (Var, Type, Term)

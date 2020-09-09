@@ -1,11 +1,14 @@
 module Printing.PPSubstitution where
 
 import           Prelude                 hiding ( (<>) )
+import           Text.PrettyPrint
+
 import           Utils.Symbol
 import           Utils.Substitution
-import           EffectRow
-import           Text.PrettyPrint
+
 import           Printing.PPTypes
+
+import           EffectRow
 
 pSubstitution :: Substitution EffVar EffRow -> Doc
 pSubstitution sub = brackets $ vcat

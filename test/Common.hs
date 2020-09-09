@@ -1,11 +1,12 @@
 module Common where
 
+import           Utils.Symbol
+import           Utils.Set
+
 import           Operation
 import           Types
 import           AST
 import           TypeChecker
-import           Utils.Symbol
-import           Utils.Set
 import           TypeEnv
 
 title :: Show a => a -> String

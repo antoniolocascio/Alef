@@ -1,26 +1,28 @@
 module TopLevelOps where
 
+import           Control.Monad
+import           Data.Maybe                     ( fromMaybe )
+import           Text.Parsec
+import           System.IO
+
+import           Utils.Symbol
+import           Utils.Substitution
+import           Utils.Error
+
+import           Parser.Parser
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
 
 import           TypeEnv
 import           Operation
 import           Types
-import           Utils.Symbol
-import           Utils.Substitution
-import           Utils.Error
 import           AST
 import           Eval
 import           EffectRow
 import           SugarTypes
 import           Sugar
-
-import           Control.Monad
-import           Data.Maybe                     ( fromMaybe )
-import           Text.Parsec
-import           Parser.Parser
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
-import           System.IO
 
 tlOps :: [Operation]
 tlOps = [toSymbol "Print", toSymbol "Read", toSymbol "Throw"]

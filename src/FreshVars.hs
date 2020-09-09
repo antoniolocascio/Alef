@@ -12,4 +12,4 @@ class FreshGen m where
 instance (UniqueGen m, Monad m) => FreshGen m where
   newFreshVar = do
     u <- newUnique
-    return $ toSymbol ("_mu" ++ show u)
+    return $ toSymbol ("_μ" ++ show u)

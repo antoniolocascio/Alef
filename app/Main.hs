@@ -1,35 +1,39 @@
 module Main where
 
-import           Printing.PPTypes
-import           Printing.PPSubstitution
-import           Printing.PPAST
-import           TypeChecker
-import           Parser.Parser
-import           Sugar
-import           AST
-import           Eval
-import           Utils.Substitution            as Sub
-import           EffectRow
-import           SugarTypes
-import           Utils.Symbol
-
 import           Data.Either
 import           Data.Maybe
 import           System.Console.GetOpt
 import qualified System.Environment            as Env
 import           System.Exit
-import           Types
 import           Control.Monad
+
+import           Utils.Substitution            as Sub
+import           Utils.Symbol
+
+import           Printing.PPTypes
+import           Printing.PPSubstitution
+import           Printing.PPAST
+
+import           Types
+import           TypeChecker
+import           Parser.Parser
+import           Sugar
+import           AST
+import           Eval
+import           EffectRow
+import           SugarTypes
 import           TopLevelOps
 
-data Options = Options {
-        -- Only type-check, don't execute.
-        optType     :: Bool
-        -- Print help.
-        ,optHelp :: Bool
-        ,optVerb :: Bool
-    }
-    deriving Show
+data Options = Options
+  {
+    -- | Only type-check, don't execute.
+    optType :: Bool
+    -- | Print help.
+  , optHelp :: Bool
+    -- | Set verbosity.
+  , optVerb :: Bool
+  }
+  deriving Show
 
 defaultOptions :: Options
 defaultOptions = Options { optType = False, optHelp = False, optVerb = False }
@@ -56,7 +60,7 @@ compilerOptions argv = case getOpt Permute options argv of
   (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
   where header = "Usage:"
 
--- OnlyType  ShowSteps Verbose  Term
+-- OnlyType  Verbose  Term
 evaluateIfNeeded
   :: Bool -> Bool -> (Type, Term, Substitution EffVar EffRow, Sig) -> IO ()
 evaluateIfNeeded True vb (_, _, sub, _) = do

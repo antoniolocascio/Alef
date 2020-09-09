@@ -1,13 +1,15 @@
 module Types where
 
-import           EffectRow
 import           Utils.Substitution
 import           Utils.Symbol                   ( EffVar )
 import           Utils.Set                     as S
 
+import           EffectRow
+
 -- | A type can be either a value type or a computation type. 
 data Type = VT VType | CT CType  deriving (Eq)
-data TypeScheme = TS (S.Set EffVar) Type deriving (Eq)
+data TypeScheme = TS (S.Set EffVar) Type
+  deriving Eq
 
 -- | Unwrap value type
 toVT :: Type -> VType
